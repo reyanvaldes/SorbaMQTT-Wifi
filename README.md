@@ -17,6 +17,25 @@ Written as a C++ class for wrapping Wifi and MQTT operations.
   **UUID**         // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
   
   **ArduinoQueue** // for Queue operations (V1.2.5)  https://github.com/EinarArnason/ArduinoQueue
+
+## How to install
+
+ Dowload the file SorbaMQTT-Wifi.zip, which is the library
+ 
+ Arduino IDE -> Sketch -> Include Library -> Add .ZIP library
+ 
+ Can find some starting examples at File -> Examples -> SorbaMqttWifi:
+ 
+   - send_data:  How to send MQTT messages compatible with SORBA format.
+   
+   - send_data_sim: How to send MQTT messages compatible with SORBA format using simulated data.
+
+   - send_data_timer_ctrl: Controlling time for sending MQTT messages compatible with SORBA without using a delay.   
+   
+   - send_recv_data: How to send and receive MQTT messages compatible with SORBA.
+   
+   - send_recv_raw_data: How to send and receive MQTT messages compatible with SORBA, receiving in a raw format (string).
+ 
   
 ## How to use
 
