@@ -14,7 +14,14 @@
 // Dynamic Memory: 40 KB 
 
 // Libraries or dependencies required
-#include <WiFi.h>          // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
+// Library for Wifi use different header for ESP32 and ESP8266 but the methods are same
+#if defined (ESP8266)
+ #include <ESP8266Wifi.h>
+#else
+ #include <WiFi.h>          // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
+#endif
+
+//#include <WiFi.h>          // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
 #include <PubSubClient.h>  // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
 #include <ArduinoJson.h>   // For JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 #include <UUID.h>          // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
