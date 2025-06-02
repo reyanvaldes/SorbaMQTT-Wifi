@@ -98,11 +98,7 @@ To send a message with Sorba format to the MQTT Broker, preparing the messages a
    // Inside sendMsg include the checking of Wifi and MQTT connections and reconnect if needed
    sorba.sendMsg(MQTT_TOPIC_PUB); 
    
-   delay(5000); // Time pacing for sending, also can use bool sorba.timerDone() to control of sending data, and sorba.setTimer(time_ms) to set timer
-   
-```
-
-To receive a message with Sorba format from the MQTT Broker
+   delay(5000); // Time pacing for sending, also can use bool sorba.timerDone() see example 'send_data_timer_ctrl'
 
 ```C++
 // Check if there are messages in queue and parse it automatically. Later can use msgUnpack to extract the parameter value easily
