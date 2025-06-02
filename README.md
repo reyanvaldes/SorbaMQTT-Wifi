@@ -9,9 +9,13 @@ Written as a C++ class for wrapping Wifi and MQTT operations.
  Install the following libraries first:
  
   **WiFi**         // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
+  
   **PubSubClient** // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
+  
   **ArduinoJson**  // For JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
+  
   **UUID**         // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
+  
   **ArduinoQueue** // for Queue operations (V1.2.5)  https://github.com/EinarArnason/ArduinoQueue
   
 ## How to use
