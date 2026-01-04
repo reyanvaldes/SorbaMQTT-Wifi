@@ -17,7 +17,7 @@
 */
 
 // Example of how to send simulated data
-
+#include <WiFiClient.h>   // For non secure connection include <WifiClient.h> or if using SSL <WiFiClientSecure.h>
 #include "sorbamqtt_wifi.h"
 
 // Init communication parameters
@@ -31,7 +31,9 @@
  #define  SORBA_GROUP    "PV"                 // Group will used in Sorba structure: <Asset>.<Group>
  #define  MQTT_TOPIC_PUB "sorba/data/Asset1"  // Topic for publish <SORBA_MAIN_TOPIC>/<SORBA_ASSET>;
  
-SorbaMqttWifi sorba; // Create main SORBA Object to allow connection and send or receive messages
+WiFiClient wifiClient;            // Create simple WifiClient object
+
+SorbaMqttWifi sorba(wifiClient); // Create main SORBA object to allow connection,  send or receive messages using MQTT
  
 // Define struct data that include sensors reading in one structure
 struct tData {

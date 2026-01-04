@@ -5,7 +5,7 @@
 // SORBOTICS
 // Author: Reyan Valdes
 // Date: 5/29/2025
-// Version: 1.0
+// Version: 1.0.1
 // email: reyanvaldes@yahoo.com
 // https://github.com/reyanvaldes/SorbaMQTT-Wifi
 
@@ -20,8 +20,6 @@
 #else
  #include <WiFi.h>          // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
 #endif
-
-//#include <WiFi.h>          // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
 #include <PubSubClient.h>  // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
 #include <ArduinoJson.h>   // For JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 #include <UUID.h>          // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
@@ -29,21 +27,21 @@
 
 // Global constant definitions for memory size- will impact Global variables %
 #define KB 1024               // Just 1024 for 1 KB
-#define MQTT_JSON_LIMIT  2 * KB  // for JSON doc size  
-#define WIFI_SSID_LIMIT  30  // Limit for SSID char []
-#define WIFI_PWD_LIMIT   25  // limit for Pwd char []
-#define MQTT_SERVER_LIMIT 100 // limit for MQTT Server Url []
-#define MQTT_USER_LIMIT  25  // Limit for MQTT User name []
-#define MQTT_PWD_LIMIT   25  // Limit for MQTT Password []
+#define MQTT_JSON_LIMIT      2 * KB  // for JSON doc size  
+#define WIFI_SSID_LIMIT     32  // Limit for SSID char [] per Wifi standard
+#define WIFI_PWD_LIMIT      64  // limit for Pwd char [] per Wifi standard
+#define MQTT_SERVER_LIMIT  100 // limit for MQTT Server Url []
+#define MQTT_USER_LIMIT     25  // Limit for MQTT User name []
+#define MQTT_PWD_LIMIT      25  // Limit for MQTT Password []
 #define MQTT_CLIENTID_LIMIT 40 // Limit for MQTT Client ID (Unique ID) Must has enough room to store the UUID, otherwise coud affect the copy
-#define MQTT_QUEUE_LIMIT 20  // Limit for MQTT Queue messages receiving from callback
+#define MQTT_QUEUE_LIMIT    20  // Limit for MQTT Queue messages receiving from callback
 
 typedef void (*callbackMQTT) (char* topic, byte* payload, unsigned int length);
 
 // Global objects created at starting
-extern WiFiClient wifiClient; // for Wifi Client
+// extern WiFiClient wifiClient; // for Wifi Client
 
-extern PubSubClient client; // Simple MQTT client
+// extern PubSubClient client; // Simple MQTT client
 
 // For JSON smaller than 1KB use StaticJsonDocument, for larger than 1 KB use DynamicJsonDocument
 extern DynamicJsonDocument _jsDoc; // Working with JSON doc for both sending MQTT messages or subscribing
@@ -63,7 +61,7 @@ extern ArduinoQueue<tSubMsg> subMsgQueue; // Queue to receive subscription messa
 class SorbaMqttWifi
 {
   public:
-  SorbaMqttWifi (); // Constructor
+  SorbaMqttWifi (Client& aWifiClient); // Constructor could be just non-protected WifiClient or WifiClientSecure (suport SSL)
  
   bool connect(char mqtt_Server[], uint16_t mqtt_Port, char userName[]="", char password[]="");   // Set the parameters and connext to MQTT Broker   
    
@@ -91,6 +89,8 @@ class SorbaMqttWifi
 
   // Wifi methods
    bool connectWifi(char wifi_ssid[], char wifi_pwd[]);  // Set the parameters and connect to the Wifi
+
+   bool connectWifi(String wifi_ssid, String wifi_pwd);  // Set the parameters and connect to the Wifi
    
    bool connectWifi();   // Connect to the Wifi
    
@@ -105,7 +105,7 @@ class SorbaMqttWifi
    uint16_t scanWifiNetwork();  // Scan all SSID available from Wifi and show in the Serial port
 
   
-   WiFiClient* getWifiClient() {return &wifiClient;};   // Get the wifi client object
+   // WiFiClient* getWifiClient() {return &wifiClient;};   // Get the wifi client object
 
    float roundToDec( float in_value, uint16_t decimal_place=2);
 
@@ -363,6 +363,8 @@ class SorbaMqttWifi
 
   private:
   // Attributes
+ 
+   PubSubClient client; // MQTT Client
    unsigned long startTime; // For checking elapsed time
    unsigned long timems = 5000;  // Time in ms for checking the timer
    

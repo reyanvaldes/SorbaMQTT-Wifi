@@ -2,7 +2,7 @@
         Author: Reyan Valdes
         email: reyanvaldes@yahoo.com
 
-        An example of using SorbaMqttWifi Library - Sending simulated data to SORBA and receive back messages
+        An example of using SorbaMqttWifi Library - Sending simulated data to SORBA and receive back messages using TLS (with server Certificate)
 
         Usage and further info:
         https://github.com/reyanvaldes/SorbaMQTT-Wifi
@@ -16,7 +16,7 @@
 
 */
 // Example of how to send simulated data and receive back messages
-#include <WiFiClient.h>   // For non secure connection include <WifiClient.h> or if using SSL <WiFiClientSecure.h>
+#include <WiFiClientSecure.h>   // For secure connection options: (a) with server certificate, (b) mTLS (server and client certificates)
 #include "sorbamqtt_wifi.h"
 
 // Init communication parameters
@@ -31,6 +31,48 @@
  #define  MQTT_TOPIC_PUB "sorba/data/Asset1"  // Topic for publish <SORBA_MAIN_TOPIC>/<SORBA_ASSET>;
  #define  MQTT_TOPIC_SUB "sorba/data/Asset1Back" // Topic used for subscribing 
  
+ static const char root_ca[] PROGMEM =  R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
+QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB
+CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97
+nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt
+43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P
+T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4
+gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO
+BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR
+TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw
+DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr
+hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg
+06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF
+PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls
+YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
+CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
+-----END CERTIFICATE-----
+)EOF";
+
+#if defined (ESP8266)
+ // Convert PEM to BearSSL trust anchor for ESP8266. This has to be global variable
+ BearSSL::X509List cert(root_ca);
+#endif
+
+// If using client certificate and key
+// const char* client_ca = \
+// "-----BEGIN CERTIFICATE-----\n" \
+// "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" \
+// "-----END CERTIFICATE-----\n";
+
+// const char* client_key = \
+// "-----BEGIN CERTIFICATE-----\n" \
+// "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" \
+// "-----END CERTIFICATE-----\n";
+
+
 WiFiClient wifiClient;            // Create simple WifiClient object
 
 SorbaMqttWifi sorba(wifiClient); // Create main SORBA object to allow connection,  send or receive messages using MQTT
@@ -71,6 +113,34 @@ void setup() {
  // Setup Serial speed for monitoring 
  Serial.begin(115200);    // Set baudrate
  Serial.println("SORBA- sending Data Demo"); 
+
+//  wifiClient.setInsecure();   // If want to disable using certificate, just for testing
+#if defined (ESP8266)   
+ // In ESP8266 it is important to sync the time otherwise it is not connected using MQTT with TSL
+ #include <time.h>    
+
+ configTime(0, 0, "pool.ntp.org", "time.nist.gov");  
+
+ Serial.print("Waiting for NTP time");
+ time_t now = time(nullptr);
+ int retry = 0;
+ while (now < 1700000000 && retry < 30) { // max ~15 seconds for time sync
+  delay(500);
+  Serial.print(".");
+  now = time(nullptr);
+  retry++;
+ }
+ Serial.println();
+
+ wifiClient.setTrustAnchors(&cert);  // Verify Server TLS (one way)
+#else // for ESP32- Here the time is ignore for TSL certificate checking
+ wifiClient.setCACert(root_ca);  // Verify Server TLS (one way)
+#endif
+
+// Option (b): Setup the Server and client certificates
+// wifiClient.setCACert(root_ca);        // Verify Server TLS (one way)
+// wifiClient.setCertificate(client_ca); // Identify Self for mTLS
+// wifiClient.setPrivateKey(client_key); // Sign for Self for mTLS
 
  // connect to Wifi
  sorba.connectWifi(WIFI_SSID, WIFI_PWD);  // It will kep trying until get connection to the Wifi, otherwise cannot do anything

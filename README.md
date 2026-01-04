@@ -1,14 +1,16 @@
 # SorbaMQTT-Wifi
 
-An MQTT library with Wi-Fi support for microcontrollers, enabling publishing and subscribing of data, 
-in a format compatible with Sorba.ai.This is compatible with both the SORBA Edge and Cloud platforms. 
-Written as a C++ class for wrapping Wifi and MQTT operations.
+An MQTT library with Wi-Fi support for microcontrollers (ESP32x, ESP8266), enabling publishing and subscribing of data, 
+in a format compatible with SORBA AI platform (https://sorba.ai). This is compatible with both the SORBA Edge and Cloud platforms. 
+Written as a C++ class for wrapping Wifi, MQTT and JSON operations.
 
 ## Dependencies
 
  Install the following libraries first:
  
   **WiFi**         // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
+    
+  **WifiManager**  // Wifi Web Portal (v2.0.17)      https://github.com/tzapu/WiFiManager
   
   **PubSubClient** // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
   
@@ -20,9 +22,11 @@ Written as a C++ class for wrapping Wifi and MQTT operations.
 
 ## How to install
 
- Dowload the file SorbaMQTT-Wifi.zip, which is the library
+ Download the file SorbaMQTT-Wifi.zip, which is the library.
  
- Arduino IDE -> Sketch -> Include Library -> Add .ZIP library
+ Arduino IDE -> Sketch -> Include Library -> Add .ZIP library.
+ 
+ Select SorbaMqtt-Wifi.zip library and click open to install the library and examples.
  
  Can find some starting examples at File -> Examples -> SorbaMqttWifi:
  
@@ -35,6 +39,13 @@ Written as a C++ class for wrapping Wifi and MQTT operations.
    - send_recv_data: How to send and receive MQTT messages compatible with SORBA.
    
    - send_recv_raw_data: How to send and receive MQTT messages compatible with SORBA, receiving in a raw format (string).
+   
+   - send_recv_data_wifi_web: How to send and receive MQTT messages compatible with SORBA, including Web Portal por initial Wifi Configuration as AP.
+   
+   - send_recv_data_tls: How to send and receive MQTT messages compatible with SORBA using TLS with Server certificate. Includes commented code for handling Client certificates.
+   
+   - send_recv_data_tls_wifi_web: How to send and receive MQTT messages compatible with SORBA using TLS with Server certificate. It includes Web Portal por initial Wifi Configuration as AP.
+   
  
   
 ## How to use
@@ -42,6 +53,7 @@ Written as a C++ class for wrapping Wifi and MQTT operations.
 Include the header file on your code:
 
 ```C++
+#include <WiFiClient.h>   // For non secure connection include <WifiClient.h> or if using SSL <WiFiClientSecure.h>
 #include "sorbamqtt_wifi.h"
 ```
 
@@ -50,7 +62,8 @@ Include the header file on your code:
 Create SORBA instance Object for sending or receiving MQTT messages using Wifi
 
 ```C++
-SorbaMqttWifi sorba;
+WiFiClient wifiClient;           // Create simple WifiClient object
+SorbaMqttWifi sorba(wifiClient); // Create main SORBA object to allow connection,  send or receive messages using MQTT, it also handle retrying for Wifi reconnection
 ```
 
 Create a set of global communication parameters that will be used when open Wifi and MQTT connections

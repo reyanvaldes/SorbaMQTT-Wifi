@@ -4,7 +4,7 @@
 // SORBOTICS
 // Author: Reyan V.
 // Date: 5/29/2025
-// Version: 1.0
+// Version: 1.0.1
 // email: reyanvaldes@yahoo.com
 // https://github.com/reyanvaldes/SorbaMQTT-Wifi 
 
@@ -15,6 +15,7 @@
 // Dependencies
 // Libraries or dependencies required for sorbamqtt_wifi
 //#include <WiFi.h>          // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
+//#include <ESP8266Wifi.h>   // Wifi for ESP8266
 //#include <PubSubClient.h>  // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
 //#include <ArduinoJson.h>   // For JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 //#include <UUID.h>          // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
@@ -22,9 +23,9 @@
 
 // Global variables
 
-WiFiClient wifiClient; // for Wifi Client
+// WiFiClient wifiClient; // for Wifi Client
 
-PubSubClient client(wifiClient); // Simple MQTT client
+// PubSubClient client(wifiClient); // Simple MQTT client
 
 DynamicJsonDocument _jsDoc (MQTT_JSON_LIMIT); // Working with JSON doc for both sending MQTT messages or subscribing
 
@@ -57,13 +58,13 @@ void defCallback(char* topic, byte* payload, unsigned int length) {  // Calling 
 
 //********************************************************************************
 
-SorbaMqttWifi::SorbaMqttWifi (){// constructor
+SorbaMqttWifi::SorbaMqttWifi (Client& awifiClient) : client(awifiClient)
+{// constructor
     setCallback(defCallback); // Set default callback for MQTT subscribing msg
 }
 
 //********************************************************************************
-
-// MQTT methods
+// setup parameters and connect to the MQTT Broker 
 bool SorbaMqttWifi::connect(char mqtt_Server[], uint16_t mqtt_Port, char userName[], char password[]){
     // transfer to get reconnection again based on this parameters
     strncpy(mqttServer, mqtt_Server, sizeof(mqttServer)); 
@@ -79,7 +80,7 @@ bool SorbaMqttWifi::connect(char mqtt_Server[], uint16_t mqtt_Port, char userNam
 
 
 //********************************************************************************
-
+// Connect to the MQTT broker
 bool SorbaMqttWifi::connect() {
     Serial.println("MQTT try to connect"); 
     Serial.print("MQTT Server: "); Serial.print(mqttServer); 
@@ -114,26 +115,26 @@ bool SorbaMqttWifi::connect() {
 }
 
 //********************************************************************************
-
+// Return the MQTT state
 int SorbaMqttWifi::state() {
     return client.state();
 }
 
 //********************************************************************************
-
+// Disconnect from MQTT broker
 void SorbaMqttWifi::disconnect() {
     Serial.println("MQTT disconnecting"); 
     client.disconnect();
    };
    
 //********************************************************************************
-
+// Is it connected to the Broker?
  bool SorbaMqttWifi::SorbaMqttWifi::isConnected() {
   return client.connected();
 }
 
 //********************************************************************************
-
+// Check connection to the MQTT Broker, if there is a problem it will try to reconnect
 void SorbaMqttWifi::checkConnection() { // Check connection to the MQTT broker
     if (!isConnected())
      connect();
@@ -141,7 +142,7 @@ void SorbaMqttWifi::checkConnection() { // Check connection to the MQTT broker
 
 
 //********************************************************************************
-
+// Reconnect doing disconnection and connection
 bool SorbaMqttWifi::reconnect() {
      Serial.println("MQTT reconnecting");
      disconnect(); 
@@ -150,7 +151,7 @@ bool SorbaMqttWifi::reconnect() {
 }
    
 //********************************************************************************
-
+// Show MQTT state
 void SorbaMqttWifi::showState() {
     Serial.print("MQTT State=");
     Serial.print(state());
@@ -200,7 +201,7 @@ void SorbaMqttWifi::showState() {
   }
 
  //********************************************************************************
-
+ // Set the parameters as array of chars and connect to the Wifi
  bool SorbaMqttWifi::connectWifi(char wifi_ssid[], char wifi_pwd[]) {
       WiFi.mode(WIFI_STA); // Acting as Station Only
       strcpy(wifiSSID, wifi_ssid);  // transfer to get reconnection again
@@ -208,8 +209,17 @@ void SorbaMqttWifi::showState() {
       return connectWifi();
 }
 
-//********************************************************************************
+// Set the parameters as String and connect to the Wifi
+bool SorbaMqttWifi::connectWifi(String wifi_ssid, String wifi_pwd)
+{
+   WiFi.mode(WIFI_STA); // Acting as Station Only
+   wifi_ssid.toCharArray(wifiSSID, sizeof(wifiSSID));  // transfer to get reconnection again
+   wifi_pwd.toCharArray(wifiPwd, sizeof(wifiPwd));
+   return connectWifi();
+}
 
+//********************************************************************************
+// Connect to Wifi with retry loop
 bool SorbaMqttWifi::connectWifi() {
     // perform connection
       WiFi.begin(wifiSSID, wifiPwd);
@@ -229,14 +239,14 @@ bool SorbaMqttWifi::connectWifi() {
    }
 
  //********************************************************************************
-
+ // Disconnect from Wifi
    void SorbaMqttWifi::disconnectWifi() {
     WiFi.disconnect(); 
     Serial.println("WiFi disconnecting"); 
    }
    
 //********************************************************************************
-  
+// Reconnecting to the Wifi
    bool SorbaMqttWifi::reconnectWifi() {
      Serial.println("WiFi reconnecting");
      disconnectWifi(); 
@@ -245,19 +255,19 @@ bool SorbaMqttWifi::connectWifi() {
    }
 
 //********************************************************************************
-
+// Check if it is connected to the Wifi
    bool SorbaMqttWifi::isConnectedWifi() {
     return WiFi.isConnected();
    }
 
 //********************************************************************************
-
+// Verify if it is connected to Wifi, if not it will try to connect with retry loop
    void SorbaMqttWifi::checkConnectionWifi() { // Check connection to the Wifi
     if (!isConnectedWifi())
      connectWifi();
    }
 //********************************************************************************
-
+// Scan Wifi Network
    uint16_t SorbaMqttWifi::scanWifiNetwork() {
     // WiFi.scanNetworks will return the number of networks found
     int n = WiFi.scanNetworks();
@@ -275,11 +285,17 @@ bool SorbaMqttWifi::connectWifi() {
       Serial.print(" (");
       Serial.print(WiFi.RSSI(i));
       Serial.print(")");
-      Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
-      delay(10);
+      #if defined (ESP8266)
+       Serial.println((WiFi.encryptionType(i) == AUTH_OPEN)?" ":"*");
+       delay(10);
+      #else 
+       Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+       delay(10);
+     #endif
     }
-    return n;
    }
+   
+   return n;
   }
  
 //********************************************************************************
@@ -301,7 +317,7 @@ double SorbaMqttWifi::roundToDec( double in_value, uint16_t decimal_place)
 }
     
 //********************************************************************************
-
+// Send MQTT message, the payload should be a valid JSON
 bool SorbaMqttWifi::sendMsg(char topic[]){ // Send the message, need to call first msgInit and msgPack
     
     checkConnectionWifi(); // Check Wifi Connection, if there is a problem, will reconnect
@@ -325,8 +341,8 @@ bool SorbaMqttWifi::sendMsg(char topic[]){ // Send the message, need to call fir
    }
 
 //********************************************************************************
-
-bool SorbaMqttWifi::recvMsg(String &topic, String &payload ) { // Receive message from Subscribing
+// Receive message from Subscribing
+bool SorbaMqttWifi::recvMsg(String &topic, String &payload ) { 
 
     // reset both variables 
     topic.clear();
@@ -347,8 +363,8 @@ bool SorbaMqttWifi::recvMsg(String &topic, String &payload ) { // Receive messag
    }
 
 //********************************************************************************
-
-bool SorbaMqttWifi::recvMsg(String &topic) { // Receive message from Subscribing and parse the JSON the output can get from JSON
+// Receive message from Subscribing and parse the JSON the output can get from JSON
+bool SorbaMqttWifi::recvMsg(String &topic) { 
 
     // reset both variables 
     topic.clear();
@@ -376,8 +392,8 @@ bool SorbaMqttWifi::recvMsg(String &topic) { // Receive message from Subscribing
    }
    
 //********************************************************************************
-
-bool SorbaMqttWifi::parseMsg(String msg) { // Parse the JSON from string, after can extract parameter values using msgUnpack
+// Parse the JSON from string, after can extract parameter values using msgUnpack
+bool SorbaMqttWifi::parseMsg(String msg) { 
   
    DeserializationError error = deserializeJson(_jsDoc, msg);
    

@@ -2,13 +2,14 @@
         Author: Reyan Valdes
         email: reyanvaldes@yahoo.com
 
-        An example of using SorbaMqttWifi Library - Sending simulated data to SORBA and receive back messages
+        An example of using SorbaMqttWifi Library - Sending simulated data to SORBA and receive back messages using TLS (with server Certificate). Support Wifi Web Portal.
 
         Usage and further info:
         https://github.com/reyanvaldes/SorbaMQTT-Wifi
 
  Libraries or dependencies have to be installed
   WiFi         // Wifi (V1.2.7)                  https://docs.arduino.cc/libraries/wifi/
+  WifiManager  // Wifi Web Portal (v2.0.17)      https://github.com/tzapu/WiFiManager
   PubSubClient // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
   ArduinoJson  // For JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
   UUID         // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
@@ -16,12 +17,11 @@
 
 */
 // Example of how to send simulated data and receive back messages
-#include <WiFiClient.h>   // For non secure connection include <WifiClient.h> or if using SSL <WiFiClientSecure.h>
-#include "sorbamqtt_wifi.h"
+#include <WiFiClientSecure.h>   // For secure connection options: (a) with server certificate, (b) mTLS (server and client certificates)
+#include <WiFiManager.h> // Web Portal for Wifi configuration: https://github.com/tzapu/WiFiManager  (v2.0.17)
+#include <sorbamqtt_wifi.h>
 
 // Init communication parameters
- char WIFI_SSID[15]     = "SSID";           // Your Wifi SSID
- char WIFI_PWD[15]      = "PASSWORD";       // Your Password 
  char MQTT_SERVER[25]   = "broker.emqx.io"; // MQTT Server: SORBA Broker u other Public Brokers like "broker.hivemq.com";
  char MQTT_USERNAME[20] = "";               // MQTT User name (if needed)
  char MQTT_PASSWORD[20] = "";               // MQTT Password (if needed)
@@ -31,6 +31,46 @@
  #define  MQTT_TOPIC_PUB "sorba/data/Asset1"  // Topic for publish <SORBA_MAIN_TOPIC>/<SORBA_ASSET>;
  #define  MQTT_TOPIC_SUB "sorba/data/Asset1Back" // Topic used for subscribing 
  
+ static const char root_ca[] PROGMEM =  R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD
+QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT
+MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j
+b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB
+CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97
+nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt
+43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P
+T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4
+gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO
+BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR
+TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw
+DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr
+hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg
+06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF
+PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls
+YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk
+CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=
+-----END CERTIFICATE-----
+)EOF";
+
+#if defined (ESP8266)
+ // Convert PEM to BearSSL trust anchor for ESP8266. This has to be global variable
+ BearSSL::X509List cert(root_ca);
+#endif
+
+// const char* client_ca = \
+// "-----BEGIN CERTIFICATE-----\n" \
+// "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" \
+// "-----END CERTIFICATE-----\n";
+
+// const char* client_key = \
+// "-----BEGIN CERTIFICATE-----\n" \
+// "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n" \
+// "-----END CERTIFICATE-----\n";
+
 WiFiClient wifiClient;            // Create simple WifiClient object
 
 SorbaMqttWifi sorba(wifiClient); // Create main SORBA object to allow connection,  send or receive messages using MQTT
@@ -72,8 +112,56 @@ void setup() {
  Serial.begin(115200);    // Set baudrate
  Serial.println("SORBA- sending Data Demo"); 
 
+ // This blocks until connected or portal timeout
+ // Initialize WiFiManager, Access Point with IP: 192.168.4.1, and Access Point "ESP32_AP", can connnect a Tablet or Cell Phoone to it and 
+ // configure the SSID and PWD for Wifi configuration. After both parameters are stored in NVS (flash memory)
+  WiFiManager wm;
+
+  if (!wm.autoConnect("ESP32_AP")) {     // Failed to connect, change to Access Point with simple WebPortal for configuration of Wifi
+    Serial.println("Failed to connect");
+    ESP.restart();
+  }
+
+Serial.println("Wi-Fi connected by WiFiManager!");
+Serial.print("IP Address: "); Serial.println(WiFi.localIP());
+
+String ssid = WiFi.SSID();  // Has to capture before disconnect, because disconnect reset both from memory
+String pwd = WiFi.psk();
+
+// --- Disconnect WiFiManager to take full control ---
+WiFi.disconnect(false, true); // Disconnect, keep credentials in NVS (flash memory)
+delay(1000);
+
+//  wifiClient.setInsecure();   // If want to disable using certificate, just for testing
+#if defined (ESP8266)   
+ // In ESP8266 it is important to sync the time otherwise it is not connected using MQTT with TSL
+ #include <time.h>    
+
+ configTime(0, 0, "pool.ntp.org", "time.nist.gov");  
+
+ Serial.print("Waiting for NTP time");
+ time_t now = time(nullptr);
+ int retry = 0;
+ while (now < 1700000000 && retry < 30) { // max ~15 seconds for time sync
+  delay(500);
+  Serial.print(".");
+  now = time(nullptr);
+  retry++;
+ }
+ Serial.println();
+
+ wifiClient.setTrustAnchors(&cert);  // Verify Server TLS (one way)
+#else // for ESP32- Here the time is ignore for TSL certificate checking
+ wifiClient.setCACert(root_ca);  // Verify Server TLS (one way)
+#endif
+
+// Option (b): Setup the Server and client certificates
+// wifiClient.setCACert(root_ca);        // Verify Server TLS (one way)
+// wifiClient.setCertificate(client_ca); // Identify Self for mTLS
+// wifiClient.setPrivateKey(client_key); // Sign for Self for mTLS
+
  // connect to Wifi
- sorba.connectWifi(WIFI_SSID, WIFI_PWD);  // It will kep trying until get connection to the Wifi, otherwise cannot do anything
+ sorba.connectWifi(ssid, pwd);  // It will kep trying until get connection to the Wifi, otherwise cannot do anything
  
  // Connect to MQTT Broker with username & password
  // Future feature: including certificate for SSL connection and zlib library compression
