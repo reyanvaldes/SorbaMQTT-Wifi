@@ -22,7 +22,7 @@ Written as a C++ class for wrapping Wifi, MQTT and JSON operations.
 
 ## How to install
 
- Download the source code from latest release, file name SorbaMQTT-Wifi-<version>.zip.
+ Download the source code (zip) from latest release, file name SorbaMQTT-Wifi-<version>.zip.
  
  Arduino IDE -> Sketch -> Include Library -> Add .ZIP library.
  
