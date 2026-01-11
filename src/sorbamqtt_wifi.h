@@ -214,6 +214,10 @@ class SorbaMqttWifi
 
    bool recvMsg(String &topic); // Receive message from Subscribing and parse the JSON
    
+   uint32_t GetTotalPackSent(){return totalPackSent;}; // Get the total of packages sent
+   
+   uint32_t GetTotalPackRecv(){return totalPackRecv;}; // Get the total of packages received
+   
    bool parseMsg(String msg); // Parse the JSON from string, after can extract parameter values using msgUnpack
 
    void msgUnpack(char group[], char param[], bool &value) { // Setup the Msg parameter for bool values
@@ -344,9 +348,9 @@ class SorbaMqttWifi
    }
 
    bool timerDone() {
-    unsigned long nowTime = millis();
-    if (nowTime - startTime >= timems) {
-      startTimer();
+    unsigned long now = millis();
+    if (now - startTime >= timems) {
+      startTime = now;
       return true;
     }
 
@@ -379,6 +383,8 @@ class SorbaMqttWifi
    uint16_t mqttKeepAlive =30;
    uint16_t mqttSocketTimeout = 60;
    uint16_t mqttFloatDecimals = 2;
+   uint32_t totalPackSent =0;
+   uint32_t totalPackRecv =0;
 
    // Used for callback when subscribing to MQTT messages
    callbackMQTT callback = NULL; 

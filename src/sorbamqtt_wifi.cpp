@@ -332,8 +332,10 @@ bool SorbaMqttWifi::sendMsg(char topic[]){ // Send the message, need to call fir
       
       bool result =  client.publish( topic, mqttMsg, mqttQoS);  // Publish the MQTT message based on the QoS defined
       if (result)
+      {
+	   totalPackSent ++;  // Increment total packages sent
        Serial.println("Sent Data to MQTT"); // print serial message if the message was sent to the server
-
+      }
      return result;
     }
     
@@ -355,6 +357,8 @@ bool SorbaMqttWifi::recvMsg(String &topic, String &payload ) {
       tSubMsg msg = subMsgQueue.dequeue();  // extract the msg from queue
       topic = msg.topic;
       payload = msg.payload;
+	  
+	  totalPackRecv ++; // Increment Total Packages Received
 
       return true; // indicating there is a message read
     }
