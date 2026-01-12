@@ -1,8 +1,8 @@
 # SorbaMQTT-Wifi
 
 An MQTT library with Wi-Fi support for microcontrollers (ESP32x, ESP8266), enabling publishing and subscribing of data, 
-in a format compatible with SORBA AI platform (https://sorba.ai). This is compatible with both the SORBA Edge and Cloud platforms. 
-Written as a C++ class for wrapping Wifi, MQTT and JSON operations.
+in a format compatible with SORBA AI platform (https://sorba.ai). This is compatible with both the SORBA Edge and Cloud platforms.
+This library also functions as a C++ wrapper, simplifying data transmission to any MQTT broker by streamlining WiFi, MQTT, and JSON operations within a single class.
 
 ## Dependencies
 
@@ -14,19 +14,21 @@ Written as a C++ class for wrapping Wifi, MQTT and JSON operations.
   
   **PubSubClient** // for MQTT Messages (V2.8.0)     https://github.com/knolleary/pubsubclient
   
-  **ArduinoJson**  // For JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
+  **ArduinoJson**  // for JSON doc handling (V7.3.1) https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
   
   **UUID**         // for UUID generator (V0.1.6)    https://github.com/RobTillaart/UUID
   
   **ArduinoQueue** // for Queue operations (V1.2.5)  https://github.com/EinarArnason/ArduinoQueue
 
+  **TFT-eSPI**     // for TFT/OLED Display (v2.5.43)  https://github.com/Bodmer/TFT_eSPI
+
 ## How to install
 
  Download the source code (zip) from latest release, file name SorbaMQTT-Wifi-<version>.zip.
  
- Arduino IDE -> Sketch -> Include Library -> Add .ZIP library.
+ Arduino IDE -> Sketch -> Include Library -> Add .ZIP library. Select SorbaMqtt-Wifi.zip library and click open to install the library and examples.
  
- Select SorbaMqtt-Wifi.zip library and click open to install the library and examples.
+ Can also search for "SorbaMqtt-Wifi" library in the Arduino IDE Library Manager and install latest version.
  
  Can find some starting examples at File -> Examples -> SorbaMqttWifi:
  
@@ -46,8 +48,8 @@ Written as a C++ class for wrapping Wifi, MQTT and JSON operations.
    
    - send_recv_data_tls_wifi_web: How to send and receive MQTT messages compatible with SORBA using TLS with Server certificate. It includes Web Portal por initial Wifi Configuration as AP.
    
- 
-  
+   - send_recv_data_wifi_web_display: Same as send_recv_data_wifi_web but adding display to show the status and basic statistics.
+
 ## How to use
 
 Include the header file on your code:

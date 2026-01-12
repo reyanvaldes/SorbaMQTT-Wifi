@@ -65,10 +65,11 @@ SorbaMqttWifi::SorbaMqttWifi (Client& awifiClient) : client(awifiClient)
 
 //********************************************************************************
 // setup parameters and connect to the MQTT Broker 
-bool SorbaMqttWifi::connect(char mqtt_Server[], uint16_t mqtt_Port, char userName[], char password[]){
+bool SorbaMqttWifi::connect(char mqtt_Server[], uint16_t mqtt_Port, char userName[], char password[], uint16_t mqtt_qos){
     // transfer to get reconnection again based on this parameters
     strncpy(mqttServer, mqtt_Server, sizeof(mqttServer)); 
     mqttPort =  mqtt_Port;
+	mqttQoS  =  mqtt_qos; // MQTT Quality of Service: 0: At Most Once ("Fire and Forget"),1: At Least Once (Acknowledged), 2: Exactly Once (Assured) 
     strncpy(mqttUserName, userName, sizeof(mqttUserName));
     strncpy(mqttPassword, password, sizeof(mqttPassword));
 
@@ -330,7 +331,7 @@ bool SorbaMqttWifi::sendMsg(char topic[]){ // Send the message, need to call fir
       
       msgToChar(); // Serializing the JSON, convert JSON msg to char [] 
       
-      bool result =  client.publish( topic, mqttMsg, mqttQoS);  // Publish the MQTT message based on the QoS defined
+      bool result =  client.publish( topic, mqttMsg, mqttQoS);  // Publish the MQTT message based on the QoS defined: 0: At Most Once ("Fire and Forget"),1: At Least Once (Acknowledged), 2: Exactly Once (Assured)
       if (result)
       {
 	   totalPackSent ++;  // Increment total packages sent
@@ -341,6 +342,21 @@ bool SorbaMqttWifi::sendMsg(char topic[]){ // Send the message, need to call fir
     
     return false;
    }
+
+//********************************************************************************
+// Send the message with custom QoS , need to call first msgInit and msgPack
+bool SorbaMqttWifi::sendMsg(char topic[], uint16_t mqtt_qos)
+{
+  uint16_t backupQoS = mqttQoS; // Backup existing QoS, so it can be restored after sending
+  
+  mqttQoS = mqtt_qos; // Set the new QoS for this sending operation: 0: At Most Once ("Fire and Forget"),1: At Least Once (Acknowledged), 2: Exactly Once (Assured) 
+  
+  bool result = sendMsg(topic); // Publish
+  
+  mqttQoS = backupQoS; // Restore
+  
+  return result;
+}
 
 //********************************************************************************
 // Receive message from Subscribing

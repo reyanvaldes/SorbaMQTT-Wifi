@@ -63,7 +63,7 @@ class SorbaMqttWifi
   public:
   SorbaMqttWifi (Client& aWifiClient); // Constructor could be just non-protected WifiClient or WifiClientSecure (suport SSL)
  
-  bool connect(char mqtt_Server[], uint16_t mqtt_Port, char userName[]="", char password[]="");   // Set the parameters and connext to MQTT Broker   
+  bool connect(char mqtt_Server[], uint16_t mqtt_Port, char userName[]="", char password []="", uint16_t mqtt_qos=0);   // Set the parameters and connext to MQTT Broker   
    
   bool connect();    // MQTT broker connection 
 
@@ -208,7 +208,9 @@ class SorbaMqttWifi
     serializeJson (_jsDoc, mqttMsg); // convert from JSON doc to char array, make sure the array has enough buffer
    }
 
-   bool sendMsg(char topic[]); // Send the message, need to call first msgInit and msgPack
+   bool sendMsg(char topic[]); // Send the message with default QoS, need to call first msgInit and msgPack
+   
+   bool sendMsg(char topic[], uint16_t mqtt_qos); // Send the message with custom QoS , need to call first msgInit and msgPack
 
    bool recvMsg(String &topic, String &payload ); // Receive message from Subscribing
 

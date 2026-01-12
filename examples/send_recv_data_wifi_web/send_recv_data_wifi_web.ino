@@ -26,6 +26,7 @@
  char MQTT_USERNAME[20] = "";               // MQTT User name (if needed)
  char MQTT_PASSWORD[20] = "";               // MQTT Password (if needed)
  uint16_t MQTT_PORT     = 1883;             // MQTT Port
+ uint16_t MQTT_QoS      = 0;                // MQTT Quality of Service: 0: At Most Once ("Fire and Forget"),1: At Least Once (Acknowledged), 2: Exactly Once (Assured)
  
  #define  SORBA_GROUP    "PV"                 // Group will used in Sorba structure: <Asset>.<Group>
  #define  MQTT_TOPIC_PUB "sorba/data/Asset1"  // Topic for publish <SORBA_MAIN_TOPIC>/<SORBA_ASSET>;
@@ -95,9 +96,8 @@ void setup() {
  // connect to Wifi
  sorba.connectWifi(ssid, pwd);  // It will kep trying until get connection to the Wifi, otherwise cannot do anything
  
- // Connect to MQTT Broker with username & password
- // Future feature: including certificate for SSL connection and zlib library compression
- sorba.connect(MQTT_SERVER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD);
+ // Connect to MQTT Broker with username & password 
+ sorba.connect(MQTT_SERVER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_QoS);
 
  // Show MQTT connection status
  if (sorba.isConnected())

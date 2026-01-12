@@ -31,7 +31,8 @@
  char MQTT_USERNAME[20] = "";               // MQTT User name (if needed)
  char MQTT_PASSWORD[20] = "";               // MQTT Password (if needed)
  uint16_t MQTT_PORT     = 1883;             // MQTT Port
- 
+ uint16_t MQTT_QoS      = 0;                // MQTT Quality of Service: 0: At Most Once ("Fire and Forget"),1: At Least Once (Acknowledged), 2: Exactly Once (Assured)
+
  #define  SORBA_GROUP    "PV"                 // Group will used in Sorba structure: <Asset>.<Group>
  #define  MQTT_TOPIC_PUB "sorba/data/Asset1"  // Topic for publish <SORBA_MAIN_TOPIC>/<SORBA_ASSET>;
  #define  MQTT_TOPIC_SUB "sorba/data/Asset1Back" // Topic used for subscribing 
@@ -72,6 +73,18 @@ void readSensorsData()
  Serial.println("Simulated values");
 }
 
+void drawCheckMark(int x, int y, int size, uint16_t color) {
+  // Draw two lines to form a check mark
+  // First short downward stroke
+  tft.drawLine(x, y + (size / 2), x + (size / 3), y + size, color);
+  // Second longer upward stroke
+  tft.drawLine(x + (size / 3), y + size, x + size, y, color);
+}
+
+void drawCheckMarkAt(int size, uint16_t color) {
+  drawCheckMark(tft.getCursorX(), tft.getCursorY(), size, color);
+}
+
 // Show display info
 void TFTdisplay(bool waitingAP, bool wifiStatus=false,bool mqttStatus=false, int32_t totalPack=0)
 {
@@ -106,21 +119,23 @@ void TFTdisplay(bool waitingAP, bool wifiStatus=false,bool mqttStatus=false, int
   tft.setTextColor(TFT_YELLOW); 
   tft.setTextFont(1);
   tft.print("Wifi:");
-  if (wifiStatus)
-    tft.println("OK");
+  if (wifiStatus) {
+    drawCheckMarkAt(14, TFT_GREEN); // Draw check mark
+  }
   else {
     tft.setTextColor(TFT_RED);
-    tft.println("Failed"); 
+    tft.println("X"); 
   }
 
   tft.setCursor(0, 65);
   tft.setTextColor(TFT_ORANGE); tft.setTextFont(1);
   tft.print("MQTT:");
-  if (mqttStatus)
-    tft.println("OK");
+  if (mqttStatus) {
+    drawCheckMarkAt(14, TFT_GREEN); // Draw check mark
+  }
   else {
     tft.setTextColor(TFT_RED);
-    tft.println("Failed"); 
+    tft.println("X"); 
   }
 
   tft.setCursor(0, 90);
@@ -169,7 +184,13 @@ void setup() {
  
  // Connect to MQTT Broker with username & password
  // Future feature: including certificate for SSL connection and zlib library compression
- sorba.connect(MQTT_SERVER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD);
+ // MQTT_QoS: 0: At Most Once ("Fire and Forget"),1: At Least Once (Acknowledged), 2: Exactly Once (Assuredt
+ // Regarding QoS, there are 3 ways to setup:
+ // a) Can set it when calling connect, the QoS by default (0), this will be used always when calling sendMsg(topic) while publishing MQTT messages 
+ // b) Set after connect the QoS by setQoS(mqtt_qos)
+ // c) Calling sendMsg(topic, mqtt_qos) with QoS parameter instead of sendMsg(topic) for custom QoS
+ 
+ sorba.connect(MQTT_SERVER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_QoS);
 
  // Show MQTT connection status
  if (sorba.isConnected())
